@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HỆ THỐNG BIỂU QUYẾT - EVNCHP</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Chart.js (for history page) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1e40af; 
+            --primary-blue-darker: #1a3690; 
+            --primary-blue-darkest: #152b71; 
+            --white-color: #ffffff;
+            --light-gray-background: #f0f2f5;
+            --navbar-module-hover-bg: #ffffff;
+            --navbar-module-hover-text: #1e40af; 
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-gray-background);
+            padding-top: 115px; 
+        }
+
+        /* Main Header (Brand and User Dropdown) */
+        .main-header {
+            background-color: var(--white-color);
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.5rem 1rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1031; 
+            height: 60px; 
+        }
+        .main-header .navbar-brand {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+        .main-header .user-nav .nav-link {
+            color: var(--primary-blue);
+        }
+        .main-header .user-nav .nav-link:hover {
+            color: var(--primary-blue-darker);
+        }
+
+        /* Module Navbar (Below Main Header) */
+        .module-navbar-custom {
+            background-color: var(--primary-blue);
+            padding: 0.3rem 0; 
+            position: fixed;
+            top: 60px; 
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 55px; 
+            display: flex; 
+            align-items: center; 
+        }
+        .module-navbar-custom .nav {
+            display: flex;
+            flex-wrap: nowrap; 
+            overflow-x: auto; 
+            justify-content: space-around; 
+            width: 100%;
+            padding-left: 0;
+            margin-bottom: 0;
+            list-style: none;
+        }
+        .module-navbar-custom .nav-item {
+            flex-shrink: 0; 
+            text-align: center;
+            margin: 0 2px; 
+        }
+        .module-navbar-custom .nav-link {
+            color: var(--white-color);
+            background-color: var(--primary-blue-darker); 
+            border-radius: 0.375rem;
+            padding: 0.4rem 0.7rem; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: block; 
+            white-space: nowrap; 
+        }
+        .module-navbar-custom .nav-link:hover {
+            background-color: var(--navbar-module-hover-bg);
+            color: var(--navbar-module-hover-text);
+        }
+        .module-navbar-custom .nav-link.active {
+            background-color: var(--primary-blue-darkest);
+            font-weight: 600;
+            color: var(--white-color);
+        }
+        .module-navbar-custom .nav-link i {
+            margin-right: 0.4rem;
+        }
+
+
+        .footer-custom {
+            background-color: var(--primary-blue-darker);
+            color: var(--white-color);
+            padding: 1rem 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .btn-primary-custom {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+            color: var(--white-color);
+        }
+        .btn-primary-custom:hover {
+            background-color: var(--primary-blue-darker);
+            border-color: var(--primary-blue-darker);
+        }
+        /* .btn-gemini class can be removed if not used elsewhere, or kept for future use */
+        .btn-gemini {
+            background-color: #8E44AD; 
+            border-color: #8E44AD;
+            color: var(--white-color);
+        }
+        .btn-gemini:hover {
+            background-color: #722F8C;
+            border-color: #722F8C;
+        }
+        .card-custom {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .form-control:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.25rem rgba(30, 64, 175, 0.25); 
+        }
+        .main-content-wrapper {
+            min-height: calc(100vh - 115px - 58px); 
+            padding-top: 20px; 
+            padding-bottom: 20px;
+            background-color: var(--light-gray-background); 
+        }
+        .module-title {
+            color: var(--primary-blue);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        .table th {
+            background-color: #e9ecef; 
+        }
+        .dashboard-card { 
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        .loading-spinner { /* Kept for potential other uses, can be removed if not needed */
+            display: none; 
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Login Page Specific Styles */
+        #loginPage {
+            background-color: var(--white-color); 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding-top: 0; 
+        }
+        #loginPage .card-custom { 
+            background-color: var(--white-color); 
+            max-width: 450px;
+            margin: auto;
+            border: 1px solid #ddd; 
+        }
+        #loginPage .login-header { 
+            background-color: var(--primary-blue);
+            color: var(--white-color);
+            padding: 1.5rem;
+            border-top-left-radius: 0.75rem;
+            border-top-right-radius: 0.75rem;
+            text-align: center;
+        }
+        #loginPage .login-header h1 {
+            font-size: 1.5rem; 
+            margin-bottom: 0;
+            color: var(--white-color);
+        }
+        #loginPage .form-label {
+            color: #495057; 
+        }
+        #loginPage .footer-custom {
+            background-color: transparent;
+            color: var(--primary-blue);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .modal-header-custom {
+            background-color: var(--primary-blue);
+            color: var(--white-color);
+        }
+        .modal-header-custom .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+        .assignee-group {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        .assignee-group legend {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+        #geminiOtherOpinionsSummary {
+            background-color: #e9f5ff;
+            border-left: 5px solid var(--primary-blue);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+         .list-group-item.voted-agree { background-color: #d1e7dd; }
+        .list-group-item.voted-disagree { background-color: #f8d7da; }
+        .list-group-item.voted-other { background-color: #fff3cd; }
+        .list-group-item.not-voted { background-color: #e9ecef; }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- Login Page Content (Default) -->
+        <div id="loginPage">
+            <div class="card card-custom w-100">
+                <div class="login-header">
+                    <h1>HỆ THỐNG BIỂU QUYẾT – EVNCHP</h1>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="username" value="admin" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Mật khẩu</label>
+                            <input type="password" class="form-control" id="password" value="admin" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary-custom btn-lg">Đăng nhập</button>
+                        </div>
+                    </form>
+                    <div id="loginError" class="text-danger mt-3 text-center" style="display: none;">Tên đăng nhập hoặc mật khẩu không đúng.</div>
+                </div>
+            </div>
+            <footer class="footer-custom">
+                TỔ CNTT – P4 - EVNCHP
+            </footer>
+        </div>
+
+        <!-- Main Dashboard Content (Hidden by default) -->
+        <div id="dashboardPage" style="display: none;">
+            <header class="main-header d-flex justify-content-between align-items-center">
+                <a class="navbar-brand" href="#" data-module="dashboardHome">HỆ THỐNG BIỂU QUYẾT - EVNCHP</a>
+                <ul class="navbar-nav user-nav ms-auto"> 
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> <span id="loggedInUserDisplay">Admin</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="#">Thông tin tài khoản</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logoutButton">Đăng xuất</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </header>
+
+            <nav class="module-navbar-custom">
+                <ul class="nav"> 
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#" data-module="dashboardHome">
+                            <i class="fas fa-home"></i> Trang chính
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-module="createVote">
+                            <i class="fas fa-plus-square"></i> Tạo phiếu
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-module="voteList">
+                            <i class="fas fa-vote-yea"></i> Biểu quyết
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-module="endVote">
+                            <i class="fas fa-check-square"></i> Kết thúc BQ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-module="voteHistory">
+                            <i class="fas fa-history"></i> Lịch sử BQ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-module="documentCabinet">
+                            <i class="fas fa-folder-open"></i> Tủ tài liệu
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-module="adminManagement">
+                            <i class="fas fa-users-cog"></i> Quản trị
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="main-content-wrapper">
+                <div id="moduleContent" class="container-fluid px-md-4">
+                    <!-- Nội dung của các module sẽ được tải vào đây -->
+                     <div class="module-container" id="dashboardHomeModule">
+                        <h2 class="module-title">Chào mừng đến Hệ thống Biểu quyết</h2>
+                        <p>Sử dụng menu phía trên để truy cập các chức năng.</p>
+                        <div class="row">
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card border-left-primary shadow h-100 py-2 card-custom dashboard-card" id="openVotesCard">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Phiếu đang mở</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="openVotesCount">0</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-poll fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card border-left-success shadow h-100 py-2 card-custom dashboard-card" id="completedVotesCard">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Phiếu đã hoàn thành</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="completedVotesCount">0</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="module-container" id="createVoteModule" style="display: none;">
+                        <h2 class="module-title">Tạo Phiếu Biểu Quyết Mới</h2>
+                        <form id="createVoteForm">
+                            <div class="row mb-3">
+                                <label for="voteRefNumberInput" class="col-sm-2 col-form-label">Số phiếu</label>
+                                <div class="col-sm-4">
+                                    <input type="text" class="form-control" id="voteRefNumberInput" placeholder="VD: 01">
+                                </div>
+                                <div class="col-sm-6">
+                                    <input type="text" readonly class="form-control-plaintext" id="voteRefNumberSuffix">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="voteTitle" class="form-label">Tiêu đề biểu quyết <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="voteTitle" required>
+                            </div>
+                            <!-- Removed voteDetailedContent field -->
+                            <div class="mb-3">
+                                <label for="voteSummary" class="form-label">Nội dung biểu quyết <span class="text-danger">*</span></label>
+                                <!-- Removed input-group and Gemini button -->
+                                <textarea class="form-control" id="voteSummary" rows="5" required placeholder="Nhập nội dung biểu quyết ở đây..."></textarea>
+                                <!-- Removed summaryLoadingSpinner -->
+                            </div>
+                            <div class="mb-3">
+                                <label for="voteAttachments" class="form-label">Đính kèm tài liệu (Cho phép chọn nhiều file)</label>
+                                <input type="file" class="form-control" id="voteAttachments" multiple>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Lựa chọn người góp ý:</label>
+                                <div class="assignee-group">
+                                    <legend>Cá nhân</legend>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="all" id="assigneeAllUsers">
+                                        <label class="form-check-label" for="assigneeAllUsers">Tất cả Người dùng (trừ Admin)</label>
+                                    </div>
+                                    <hr>
+                                    <div id="individualUserCheckboxes">
+                                        {/* Populated by JS */}
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary-custom">Tạo biểu quyết</button>
+                        </form>
+                    </div>
+
+                    <div class="module-container" id="voteListModule" style="display: none;">
+                        <h2 class="module-title">Danh Sách Phiếu Biểu Quyết Đang Mở</h2>
+                        <div class="list-group">
+                            {/* Populated by JS */}
+                        </div>
+                    </div>
+                    
+                    <div class="module-container" id="voteDetailModule" style="display: none;">
+                        <h2 class="module-title" id="detailVoteTitle">Chi Tiết Phiếu Biểu Quyết</h2>
+                        <input type="hidden" id="currentVoteId"> 
+                        <div class="card card-custom">
+                            <div class="card-body">
+                                <h5 class="card-title">Tiêu đề: <span id="voteDetailTitleText"></span></h5>
+                                <p class="card-text"><strong>Nội dung:</strong> <span id="voteDetailSummaryText"></span></p>
+                                <p class="card-text"><strong>File đính kèm:</strong>
+                                    <ul id="voteDetailAttachments"></ul>
+                                </p>
+                                <hr>
+                                <div id="voteActionSection" style="display:none;"> 
+                                    <h5>Lựa chọn của bạn:</h5>
+                                    <form id="submitVoteForm">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="userVoteOption" id="userOptionAgree" value="agree" checked>
+                                            <label class="form-check-label" for="userOptionAgree">Đồng ý</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="userVoteOption" id="userOptionDisagree" value="disagree">
+                                            <label class="form-check-label" for="userOptionDisagree">Không đồng ý</label>
+                                            <textarea class="form-control mt-1" id="userDisagreeReason" placeholder="Lý do không đồng ý (bắt buộc nếu chọn)" style="display:none;"></textarea>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="userVoteOption" id="userOptionOther" value="other">
+                                            <label class="form-check-label" for="userOptionOther">Ý kiến khác</label>
+                                            <textarea class="form-control mt-1" id="userOtherOpinion" placeholder="Nội dung ý kiến khác (bắt buộc nếu chọn)" style="display:none;"></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary-custom">Gửi phiếu biểu quyết</button>
+                                    </form>
+                                </div>
+                                <div id="voteStatusMessage" class="alert" style="display:none;">
+                                </div>
+                                <button class="btn btn-info mt-3" id="exportVoteResultsButton" style="display: none;">
+                                    <i class="fas fa-file-export"></i> Xuất kết quả biểu quyết
+                                </button>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary mt-3" id="backToVoteList">Quay lại danh sách</button>
+                    </div>
+
+                    <div class="module-container" id="endVoteModule" style="display: none;">
+                        <div id="endVoteListContainer">
+                            <h2 class="module-title">Danh Sách Phiếu Cần Kết Thúc</h2>
+                            <p>Chọn một phiếu để xem chi tiết và thực hiện kết thúc.</p>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">Tiêu đề phiếu</th>
+                                            <th scope="col">Ngày tạo</th>
+                                            <th scope="col">Số người đã BQ / Tổng số</th>
+                                            <th scope="col">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="endVoteTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="endVoteDetailContainer" style="display: none;">
+                            <h2 class="module-title">Chi Tiết Phiếu: <span id="endVoteDetailTitle"></span></h2>
+                             <p><strong>Số phiếu:</strong> <span id="endVoteDetailRefNum"></span></p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-check-circle text-success"></i> Đã biểu quyết</h5>
+                                    <ul class="list-group mb-3" id="usersVotedList"></ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-times-circle text-danger"></i> Chưa biểu quyết</h5>
+                                    <ul class="list-group mb-3" id="usersNotVotedList"></ul>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-danger" id="executeEndVoteButton" disabled>
+                                    <i class="fas fa-flag-checkered"></i> Kết thúc Biểu quyết này
+                                </button>
+                                <button class="btn btn-secondary" id="backToEndVoteListButton">
+                                    <i class="fas fa-arrow-left"></i> Quay lại Danh sách
+                                </button>
+                            </div>
+                             <p id="endVoteStatusMessage" class="mt-2 text-muted"></p>
+                        </div>
+                    </div>
+
+
+                    <div class="module-container" id="voteHistoryModule" style="display: none;">
+                        <h2 class="module-title">Lịch Sử Biểu Quyết</h2>
+                        <div class="accordion" id="historyAccordion"></tbody>
+                    </div>
+
+                    <div class="module-container" id="documentCabinetModule" style="display: none;">
+                        <h2 class="module-title">Tủ Tài Liệu</h2>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Danh sách tài liệu</h4>
+                            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal"><i class="fas fa-upload"></i> Tải lên tài liệu mới</button>
+                        </div>
+                        <div class="accordion" id="documentAccordion"></div>
+                    </div>
+
+                    <div class="module-container" id="adminManagementModule" style="display: none;">
+                        <h2 class="module-title">Quản Trị Hệ Thống</h2>
+                        <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="user-management-tab" data-bs-toggle="tab" data-bs-target="#userManagementContent" type="button" role="tab" aria-controls="userManagementContent" aria-selected="true">Quản lý người dùng</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="vote-management-tab" data-bs-toggle="tab" data-bs-target="#voteManagementContent" type="button" role="tab" aria-controls="voteManagementContent" aria-selected="false">Quản lý biểu quyết</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="permission-management-tab" data-bs-toggle="tab" data-bs-target="#permissionManagementContent" type="button" role="tab" aria-controls="permissionManagementContent" aria-selected="false">Quản trị phân quyền</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content pt-3" id="adminTabsContent">
+                            <div class="tab-pane fade show active" id="userManagementContent" role="tabpanel" aria-labelledby="user-management-tab">
+                                <h4>Danh sách người dùng</h4>
+                                <button class="btn btn-success btn-sm mb-3" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="fas fa-user-plus"></i> Thêm người dùng mới</button>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead><tr><th>ID</th><th>Tên đăng nhập</th><th>Vai trò</th><th>Hành động</th></tr></thead>
+                                        <tbody id="userListTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="voteManagementContent" role="tabpanel" aria-labelledby="vote-management-tab">
+                                <h4>Quản lý phiếu biểu quyết</h4>
+                                <div class="table-responsive">
+                                     <table class="table table-striped">
+                                        <thead><tr><th>ID</th><th>Tiêu đề</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                                        <tbody id="adminVoteListTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="permissionManagementContent" role="tabpanel" aria-labelledby="permission-management-tab">
+                                <h4>Phân quyền truy cập module</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Tạo phiếu</th>
+                                                <th>Biểu quyết</th>
+                                                <th>Kết thúc BQ</th>
+                                                <th>Lịch sử BQ</th>
+                                                <th>Tủ tài liệu</th>
+                                                <th>Quản trị</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="permissionsTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <button class="btn btn-primary-custom mt-3" id="savePermissionsButton">Lưu thay đổi phân quyền</button>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+            </div> 
+            <footer class="footer-custom">TỔ CNTT – P4 - EVNCHP</footer>
+        </div> 
+    </div> 
+
+    <!-- Modals -->
+    <div class="modal fade" id="historyDetailModal" tabindex="-1" aria-labelledby="historyDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-custom">
+                    <h5 class="modal-title" id="historyDetailModalLabel">Chi tiết Lịch sử Biểu quyết</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h4 id="historyVoteTitle"></h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h5>Biểu đồ tỷ lệ biểu quyết</h5>
+                            <div style="height: 300px;"><canvas id="voteChart"></canvas></div>
+                            <p id="voteConclusion" class="mt-3 fw-bold"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Danh sách người biểu quyết và ý kiến</h5>
+                            <ul class="list-group list-group-flush" id="voterList" style="max-height: 250px; overflow-y: auto;"></ul>
+                             <div id="otherOpinionsSummaryContainer" class="mt-3" style="display: none;">
+                                <button class="btn btn-sm btn-gemini mb-2" id="summarizeOtherOpinionsButton">
+                                   <i class="fas fa-magic"></i> ✨ Tóm tắt các ý kiến khác
+                                </button>
+                                <div id="otherOpinionsLoadingSpinner" class="loading-spinner"></div>
+                                <div id="geminiOtherOpinionsSummary" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <h5>Tài liệu đính kèm</h5>
+                    <ul id="historyAttachments"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-custom">
+                    <h5 class="modal-title" id="addUserModalLabel">Thêm Người Dùng Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="mb-3">
+                            <label for="newUserName" class="form-label">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="newUserName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newUserPassword" class="form-label">Mật khẩu</label>
+                            <input type="password" class="form-control" id="newUserPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newUserRole" class="form-label">Vai trò</label>
+                            <select class="form-select" id="newUserRole">
+                                <option value="User">User</option> 
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom">Thêm người dùng</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-custom">
+                    <h5 class="modal-title" id="uploadDocumentModalLabel">Tải Lên Tài Liệu Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadDocumentForm">
+                        <div class="mb-3">
+                            <label for="documentFile" class="form-label">Chọn file (PDF, DOCX, ...)</label>
+                            <input type="file" class="form-control" id="documentFile" required multiple>
+                        </div>
+                         <div class="mb-3">
+                            <label for="documentYear" class="form-label">Năm (Thư mục lưu trữ)</label>
+                            <select class="form-select" id="documentYear">
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                                 <option value="2023">2023</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom">Tải lên</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="customAlertModal" tabindex="-1" aria-labelledby="customAlertModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header modal-header-custom">
+            <h5 class="modal-title" id="customAlertModalLabel">Thông báo</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="customAlertModalBody"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary-custom" data-bs-dismiss="modal" id="customAlertModalOkButton">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+
+    <script>
+        // --- Global Data Store (Simulating Backend/LocalStorage) ---
+        let appData = {
+            currentUser: null, 
+            users: [
+                { id: 1, username: 'admin', password: 'admin', role: 'Admin', permissions: { createVote: true, voteList: true, endVote: true, voteHistory: true, documentCabinet: true, adminManagement: true } },
+                { id: 2, username: 'user1', password: 'user123', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 3, username: 'user2', password: 'user234', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 4, username: 'user3', password: 'user345', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 5, username: 'user4', password: 'user456', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 6, username: 'user5', password: 'user567', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 7, username: 'demo', password: 'demo', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } } 
+            ],
+            votes: [
+                // Sample Open Votes
+                { id: 1, refNum: "01/2025/CHP-HĐQT", title: "Biểu quyết về chính sách làm việc từ xa", detailedContent: "Nội dung chi tiết về chính sách làm việc từ xa...", summary: "Đề xuất chính sách làm việc từ xa 2 ngày/tuần.", attachments: [{name: "ChinhSachLamViecTuXa.pdf", url:"#", type: "application/pdf", size: 120000}], date: "01/06/2025", deadlineInfo: "Còn 7 ngày", status: "open", creator: "admin", assignees: ["user1", "user2", "user3", "all"], options: ["agree", "disagree", "other"], results: [ {userId: "user1", option: "agree", reason: "", timestamp: "02/06/2025 10:00"} ] }, 
+                { id: 2, refNum: "02/2025/CHP-HĐQT", title: "Phê duyệt nhà cung cấp mới", detailedContent: "Nội dung chi tiết về việc phê duyệt nhà cung cấp...", summary: "Phê duyệt nhà cung cấp ABC.", attachments: [], date: "03/06/2025", deadlineInfo: "Còn 10 ngày", status: "open", creator: "admin", assignees: ["user1", "user2"], options: ["agree", "disagree", "other"], results: [ {userId: "user1", option: "agree", reason: "", timestamp: "04/06/2025 11:00"}, {userId: "user2", option: "disagree", reason: "Giá cao", timestamp: "04/06/2025 12:00"} ] }, 
+                { id: 3, refNum: "03/2025/CHP-HĐQT", title: "Kế hoạch tổ chức sự kiện", detailedContent: "Nội dung chi tiết về kế hoạch sự kiện...", summary: "Kế hoạch sự kiện 10 năm thành lập.", attachments: [], date: "05/06/2025", deadlineInfo: "Còn 12 ngày", status: "open", creator: "admin", assignees: ["user4", "user5", "demo"], options: ["agree", "disagree", "other"], results: [] }, 
+                { id: 6, refNum: "01/2024/CHP-HĐQT", title: "Phê duyệt ngân sách Marketing Q1/2024", detailedContent: "Chi tiết ngân sách dành cho các hoạt động Marketing trong Quý 1 năm 2024, bao gồm quảng cáo trực tuyến, sự kiện và tài liệu quảng bá.", summary: "Ngân sách Marketing Q1/2024.", attachments: [], date: "10/01/2024", status: "closed", creator: "admin", assignees: ["user1", "user2"], results: [{userId: "user1", option: "agree", reason: "", timestamp: "12/01/2024 10:00"}, {userId: "user2", option: "agree", reason: "", timestamp: "12/01/2024 11:30"}] },
+                { id: 7, refNum: "02/2024/CHP-HĐQT", title: "Kế hoạch tuyển dụng nhân sự phòng Kỹ thuật", detailedContent: "Kế hoạch tuyển dụng 02 kỹ sư phần mềm và 01 chuyên viên kiểm thử cho phòng Kỹ thuật để đáp ứng nhu cầu phát triển dự án mới.", summary: "Tuyển dụng nhân sự phòng Kỹ thuật.", attachments: [{name: "KeHoachTuyenDungKT.pdf", url:"#", type: "application/pdf", size: 80000}], date: "15/02/2024", status: "closed", creator: "admin", assignees: ["user3", "user4"], results: [{userId: "user3", option: "agree", reason: "", timestamp: "17/02/2024 14:00"}, {userId: "user4", option: "disagree", reason: "Cần xem xét lại số lượng tuyển dụng.", timestamp: "17/02/2024 15:00"}] },
+            ],
+            documents: [ 
+                { id: 1, name: "BaoCaoTaiChinh_Q1_2025.pdf", year: "2025", uploader: "admin", uploadDate: "10/04/2025", type: "application/pdf", size: 307200 },
+                { id: 2, name: "KeHoachKinhDoanh_2025.docx", year: "2025", uploader: "admin", uploadDate: "15/01/2025", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 102400 },
+            ]
+        };
+
+        const GEMINI_API_KEY = ""; // Keep this, might be used for other Gemini features in future
+
+        // callGeminiAPI function is no longer needed for summary generation but kept for potential future use
+        async function callGeminiAPI(promptText) {
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+            let chatHistory = [{ role: "user", parts: [{ text: promptText }] }];
+            const payload = { contents: chatHistory };
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Gemini API Error:", errorData);
+                    throw new Error(`API request failed with status ${response.status}: ${errorData.error?.message || response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Unexpected API response structure:", data);
+                    throw new Error("Không nhận được nội dung hợp lệ từ Gemini API.");
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                throw error; 
+            }
+        }
+
+
+        let customAlertModalInstance = null;
+        function showCustomAlert(message, title = "Thông báo") {
+            if (!customAlertModalInstance) {
+                customAlertModalInstance = new bootstrap.Modal(document.getElementById('customAlertModal'));
+            }
+            document.getElementById('customAlertModalLabel').textContent = title;
+            document.getElementById('customAlertModalBody').textContent = message;
+            customAlertModalInstance.show();
+        }
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            const loginPage = document.getElementById('loginPage');
+            const dashboardPage = document.getElementById('dashboardPage');
+            const loginForm = document.getElementById('loginForm');
+            const loginError = document.getElementById('loginError');
+            const logoutButton = document.getElementById('logoutButton');
+            const loggedInUserDisplay = document.getElementById('loggedInUserDisplay');
+            
+            const moduleNavLinks = document.querySelectorAll('.module-navbar-custom .nav-link');
+            const moduleContainers = document.querySelectorAll('.module-container');
+            const navbarBrandLink = document.querySelector('.main-header .navbar-brand');
+
+            const openVotesCard = document.getElementById('openVotesCard');
+            const completedVotesCard = document.getElementById('completedVotesCard');
+            const openVotesCountEl = document.getElementById('openVotesCount');
+            const completedVotesCountEl = document.getElementById('completedVotesCount');
+
+            const voteRefNumberInput = document.getElementById('voteRefNumberInput');
+            const voteRefNumberSuffix = document.getElementById('voteRefNumberSuffix');
+            const assigneeAllUsersCheckbox = document.getElementById('assigneeAllUsers');
+            const individualUserCheckboxesContainer = document.getElementById('individualUserCheckboxes');
+            
+            // Removed generateSummaryButton and summaryLoadingSpinner as they are no longer used
+            const voteSummaryTextarea = document.getElementById('voteSummary'); 
+            
+            const summarizeOtherOpinionsButton = document.getElementById('summarizeOtherOpinionsButton'); // For history modal
+            const otherOpinionsSummaryContainer = document.getElementById('otherOpinionsSummaryContainer');
+            const geminiOtherOpinionsSummaryDiv = document.getElementById('geminiOtherOpinionsSummary');
+            const otherOpinionsLoadingSpinner = document.getElementById('otherOpinionsLoadingSpinner');
+
+            const currentVoteIdInput = document.getElementById('currentVoteId');
+            const exportVoteResultsButton = document.getElementById('exportVoteResultsButton');
+
+            const endVoteListContainer = document.getElementById('endVoteListContainer');
+            const endVoteDetailContainer = document.getElementById('endVoteDetailContainer');
+            const backToEndVoteListButton = document.getElementById('backToEndVoteListButton');
+            const executeEndVoteButton = document.getElementById('executeEndVoteButton');
+
+
+            function populateUserCheckboxes() {
+                 if(individualUserCheckboxesContainer) {
+                    const userCheckboxesHtml = appData.users.filter(u => u.role === 'User').map(user => `
+                        <div class="form-check">
+                            <input class="form-check-input assignee-checkbox-user" type="checkbox" value="${user.username}" id="assignee${user.username}">
+                            <label class="form-check-label" for="assignee${user.username}">${user.username}</label>
+                        </div>
+                    `).join('');
+                    individualUserCheckboxesContainer.innerHTML = userCheckboxesHtml;
+                }
+            }
+            
+            function updateDashboardCounts() {
+                if (openVotesCountEl) {
+                    openVotesCountEl.textContent = appData.votes.filter(v => v.status === 'open').length;
+                }
+                if (completedVotesCountEl) {
+                     completedVotesCountEl.textContent = appData.votes.filter(v => v.status === 'closed').length;
+                }
+            }
+            
+            function populateVoteList() {
+                const voteListGroup = document.querySelector('#voteListModule .list-group');
+                if (!voteListGroup) return;
+                voteListGroup.innerHTML = ''; 
+                const openVotes = appData.votes.filter(v => v.status === 'open');
+
+                if (openVotes.length === 0) {
+                    voteListGroup.innerHTML = '<p class="text-center text-muted">Không có phiếu nào đang mở.</p>';
+                    return;
+                }
+
+                openVotes.forEach(vote => {
+                    const item = document.createElement('a');
+                    item.href = "#";
+                    item.className = "list-group-item list-group-item-action";
+                    item.setAttribute('data-vote-id', vote.id); 
+                    item.innerHTML = `
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">${vote.title} (Số: ${vote.refNum || 'N/A'})</h5>
+                            <small>${vote.deadlineInfo || 'N/A'}</small>
+                        </div>
+                        <p class="mb-1">${vote.summary}</p>
+                        <small>Người tạo: ${vote.creator} | Ngày tạo: ${vote.date || 'N/A'}</small>
+                    `;
+                    voteListGroup.appendChild(item);
+                });
+            }
+            
+            function navigateToModule(moduleId) {
+                showModule(moduleId + 'Module'); 
+                moduleNavLinks.forEach(l => l.classList.remove('active'));
+                const activeLink = document.querySelector(`.module-navbar-custom .nav-link[data-module="${moduleId}"]`);
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                }
+            }
+
+            if (openVotesCard) {
+                openVotesCard.addEventListener('click', function() {
+                    navigateToModule('voteList');
+                });
+            }
+
+            if (completedVotesCard) {
+                completedVotesCard.addEventListener('click', function() {
+                    navigateToModule('voteHistory');
+                });
+            }
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    
+                    const foundUser = appData.users.find(u => u.username === username && u.password === password);
+
+                    if (foundUser) {
+                        appData.currentUser = foundUser;
+                        loginPage.style.display = 'none';
+                        dashboardPage.style.display = 'block';
+                        loginError.style.display = 'none';
+                        if(loggedInUserDisplay) loggedInUserDisplay.textContent = appData.currentUser.username;
+                        
+                        populateAllDynamicContent();
+                        applyPermissionsToUI(); 
+                        navigateToModule('dashboardHome'); 
+
+                    } else {
+                        loginError.style.display = 'block';
+                         appData.currentUser = null;
+                    }
+                });
+            }
+            
+             function populateAllDynamicContent(){
+                updateDashboardCounts();
+                populateVoteList(); 
+                populateEndVoteListTable(); 
+                populateAdminUserList();
+                populateAdminVoteList();
+                populatePermissionsTable();
+                populateDocumentCabinet();
+                populateHistoryAccordion();
+                updateVoteRefNumberSuffix(); 
+                populateUserCheckboxes();
+            }
+
+            function applyPermissionsToUI() {
+                if (!appData.currentUser) { 
+                    moduleNavLinks.forEach(link => {
+                         link.parentElement.style.display = 'none'; 
+                    });
+                    return;
+                }
+
+                const permissions = appData.currentUser.permissions;
+                let firstVisibleModule = 'dashboardHome'; 
+                let foundFirstVisible = false;
+
+                moduleNavLinks.forEach(link => {
+                    const moduleName = link.getAttribute('data-module');
+                    if (permissions.hasOwnProperty(moduleName)) {
+                        if (permissions[moduleName]) {
+                            link.parentElement.style.display = ''; 
+                            if(!foundFirstVisible){
+                                firstVisibleModule = moduleName;
+                                foundFirstVisible = true;
+                            }
+                        } else {
+                            link.parentElement.style.display = 'none'; 
+                        }
+                    } else {
+                         link.parentElement.style.display = 'none'; 
+                    }
+                });
+                
+                const activeLink = document.querySelector('.module-navbar-custom .nav-link.active');
+                if (activeLink && activeLink.parentElement.style.display === 'none') {
+                     navigateToModule(firstVisibleModule); 
+                } else if (!activeLink && appData.currentUser) { 
+                    navigateToModule(firstVisibleModule);
+                }
+            }
+
+
+            if (logoutButton) {
+                logoutButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    appData.currentUser = null;
+                    loginPage.style.display = 'flex'; 
+                    dashboardPage.style.display = 'none';
+                    if(loginForm) loginForm.reset();
+                    if(loggedInUserDisplay) loggedInUserDisplay.textContent = "Admin"; 
+                });
+            }
+
+            function showModule(moduleIdToShow) {
+                moduleContainers.forEach(container => {
+                    container.style.display = 'none';
+                });
+                const activeModule = document.getElementById(moduleIdToShow);
+                 if (!appData.currentUser && moduleIdToShow !== 'loginPageModule' && moduleIdToShow !== 'loginPage') { 
+                    loginPage.style.display = 'flex';
+                    dashboardPage.style.display = 'none';
+                    return;
+                }
+
+                if (activeModule) {
+                    activeModule.style.display = 'block';
+                }
+                
+                const moduleNameWithoutSuffix = moduleIdToShow.replace('Module', '');
+                const modulesWithoutDirectPermission = ['dashboardHome', 'voteDetail']; 
+
+                if (appData.currentUser && appData.currentUser.permissions &&
+                    !appData.currentUser.permissions[moduleNameWithoutSuffix] && 
+                    !modulesWithoutDirectPermission.includes(moduleNameWithoutSuffix) ) { 
+                     showCustomAlert("Bạn không có quyền truy cập chức năng này.", "Lỗi Phân Quyền");
+                     navigateToModule('dashboardHome'); 
+                     return;
+                }
+
+                // Call specific population functions when a module is shown
+                if (moduleIdToShow === 'createVoteModule') {
+                    updateVoteRefNumberSuffix();
+                    populateUserCheckboxes(); 
+                } else if (moduleIdToShow === 'voteListModule') {
+                    populateVoteList();
+                } else if (moduleIdToShow === 'endVoteModule') {
+                    document.getElementById('endVoteListContainer').style.display = 'block';
+                    document.getElementById('endVoteDetailContainer').style.display = 'none';
+                    populateEndVoteListTable(); 
+                } else if (moduleIdToShow === 'voteHistoryModule') {
+                    populateHistoryAccordion();
+                } else if (moduleIdToShow === 'documentCabinetModule') {
+                    populateDocumentCabinet(); 
+                } else if (moduleIdToShow === 'adminManagementModule' && appData.currentUser && appData.currentUser.permissions.adminManagement) { 
+                    console.log("[AdminDebug] Showing Admin Management Module. User:", appData.currentUser.username);
+                    populateAdminUserList();
+                    populateAdminVoteList();
+                    populatePermissionsTable();
+                    
+                    const firstTabButtonEl = document.getElementById('user-management-tab'); 
+                    console.log("[AdminDebug] First tab button element (user-management-tab):", firstTabButtonEl);
+                    if (firstTabButtonEl) {
+                        document.querySelectorAll('#adminTabs .nav-link').forEach(btn => btn.classList.remove('active'));
+                        document.querySelectorAll('#adminTabsContent .tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+
+                        firstTabButtonEl.classList.add('active');
+                        const targetPaneId = firstTabButtonEl.getAttribute('data-bs-target'); 
+                        if (targetPaneId) {
+                            const targetPaneEl = document.querySelector(targetPaneId);
+                            if (targetPaneEl) {
+                                targetPaneEl.classList.add('show', 'active');
+                                console.log(`[AdminDebug] Successfully activated tab: ${firstTabButtonEl.id} and pane: ${targetPaneId}`);
+                            } else {
+                                console.error(`[AdminDebug] Pane not found for target: ${targetPaneId}`);
+                            }
+                        } else {
+                            console.error(`[AdminDebug] No data-bs-target for first tab button (user-management-tab).`);
+                        }
+                    } else {
+                        console.warn("[AdminDebug] Admin module: First tab button (user-management-tab) not found for initialization.");
+                    }
+                }
+            }
+            
+            moduleNavLinks.forEach(link => {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const moduleId = this.getAttribute('data-module');
+                    navigateToModule(moduleId);
+                });
+            });
+            
+            if(navbarBrandLink) {
+                navbarBrandLink.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    navigateToModule('dashboardHome');
+                });
+            }
+
+            function updateVoteRefNumberSuffix() {
+                if (voteRefNumberSuffix) {
+                    const currentYear = new Date().getFullYear();
+                    voteRefNumberSuffix.value = `/${currentYear}/CHP-HĐQT`;
+                }
+            }
+            
+            if (assigneeAllUsersCheckbox) {
+                assigneeAllUsersCheckbox.addEventListener('change', function() {
+                    const isChecked = this.checked;
+                    const currentIndividualCheckboxes = document.querySelectorAll('#individualUserCheckboxes .assignee-checkbox-user');
+                    currentIndividualCheckboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked; 
+                        checkbox.disabled = isChecked; 
+                    });
+                });
+            }
+
+             if (individualUserCheckboxesContainer) { 
+                individualUserCheckboxesContainer.addEventListener('change', function(event){
+                    if (event.target.classList.contains('assignee-checkbox-user')) {
+                         const currentIndividualCheckboxes = document.querySelectorAll('#individualUserCheckboxes .assignee-checkbox-user');
+                        if (!event.target.checked && assigneeAllUsersCheckbox.checked) {
+                           assigneeAllUsersCheckbox.checked = false;
+                            currentIndividualCheckboxes.forEach(cb => cb.disabled = false);
+                        }
+                        let allIndividualChecked = true;
+                        currentIndividualCheckboxes.forEach(cb => {
+                            if (!cb.checked) allIndividualChecked = false;
+                        });
+
+                        if (allIndividualChecked && !assigneeAllUsersCheckbox.disabled && currentIndividualCheckboxes.length > 0) { 
+                            assigneeAllUsersCheckbox.checked = true;
+                             currentIndividualCheckboxes.forEach(cb => cb.disabled = true); 
+                        }
+                    }
+                });
+            }
+            
+            // Removed generateSummaryButton event listener as the button is removed.
+
+            const createVoteForm = document.getElementById('createVoteForm');
+            if (createVoteForm) {
+                 createVoteForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); 
+                    const title = document.getElementById('voteTitle').value;
+                    // const detailedContent = document.getElementById('voteDetailedContent').value; // Removed
+                    const summary = document.getElementById('voteSummary').value; // This is now the main content
+                    const voteRefNumInputVal = voteRefNumberInput.value;
+                    const fullRefNum = `${voteRefNumInputVal}${voteRefNumberSuffix.value}`; 
+                    const attachmentsInput = document.getElementById('voteAttachments');
+                    const files = attachmentsInput.files; 
+                    let attachmentData = []; 
+                    for (let i = 0; i < files.length; i++) {
+                        attachmentData.push({ 
+                            name: files[i].name, 
+                            type: files[i].type, 
+                            size: files[i].size, 
+                            url: "#" 
+                        });
+                    }
+
+                    let assignedTo = [];
+                    if (assigneeAllUsersCheckbox.checked) {
+                        appData.users.filter(u => u.role === 'User').forEach(u => {
+                            if(!assignedTo.includes(u.username)) assignedTo.push(u.username);
+                        });
+                         if (!assignedTo.includes('all')) assignedTo.push('all'); 
+                    } else {
+                         document.querySelectorAll('#individualUserCheckboxes .assignee-checkbox-user:checked').forEach(cb => {
+                            if (!assignedTo.includes(cb.value)) assignedTo.push(cb.value);
+                         });
+                    }
+                    
+                    if (!title || !summary ) { // Changed to check only title and summary
+                        showCustomAlert('Tiêu đề và nội dung biểu quyết là bắt buộc.');
+                        return;
+                    }
+                     if (!voteRefNumInputVal.trim()) {
+                        showCustomAlert('Số phiếu là bắt buộc.');
+                        voteRefNumberInput.focus();
+                        return;
+                    }
+                    if (assignedTo.length === 0 && !assigneeAllUsersCheckbox.checked) { 
+                        showCustomAlert('Vui lòng chọn ít nhất một người dùng để biểu quyết.');
+                        return;
+                    }
+                    
+                    const newVote = {
+                        id: appData.votes.length > 0 ? Math.max(...appData.votes.map(v => v.id)) + 1 : 1, 
+                        refNum: fullRefNum,
+                        title: title,
+                        detailedContent: "", // Set to empty or remove if schema changes
+                        summary: summary, // This is now the main content
+                        attachments: attachmentData, 
+                        date: new Date().toLocaleDateString('vi-VN'), 
+                        deadlineInfo: "Mới tạo", 
+                        status: "open", 
+                        creator: appData.currentUser.username, 
+                        assignees: assignedTo, 
+                        options: ["agree", "disagree", "other"], 
+                        results: [] 
+                    };
+                    appData.votes.push(newVote); 
+
+                    showCustomAlert(`Tạo phiếu thành công! Số phiếu: ${fullRefNum}`);
+                    createVoteForm.reset(); 
+                    updateVoteRefNumberSuffix(); 
+                    assigneeAllUsersCheckbox.checked = false; 
+                    document.querySelectorAll('#individualUserCheckboxes .assignee-checkbox-user').forEach(checkbox => { 
+                        checkbox.checked = false;
+                        checkbox.disabled = false;
+                    });
+                    
+                    updateDashboardCounts();
+                    populateVoteList();
+                    populateEndVoteListTable(); 
+                    populateAdminVoteList(); 
+                    navigateToModule('voteList'); 
+                });
+            }
+
+            const voteListContainer = document.getElementById('voteListModule');
+            if (voteListContainer) {
+                 voteListContainer.addEventListener('click', function(event) {
+                    let targetElement = event.target;
+                    while (targetElement != null && !targetElement.classList.contains('list-group-item-action')) {
+                        targetElement = targetElement.parentElement;
+                    }
+
+                    if (targetElement && targetElement.classList.contains('list-group-item-action')) {
+                        event.preventDefault();
+                        const voteId = parseInt(targetElement.getAttribute('data-vote-id'));
+                        const selectedVote = appData.votes.find(v => v.id === voteId);
+                        if (selectedVote) {
+                            populateVoteDetail(selectedVote); 
+                            navigateToModule('voteDetail'); 
+                        } else {
+                            showCustomAlert("Không tìm thấy thông tin phiếu biểu quyết.");
+                        }
+                    }
+                });
+            }
+            
+            function populateVoteDetail(voteData) {
+                currentVoteIdInput.value = voteData.id; 
+                document.getElementById('detailVoteTitle').textContent = `Chi Tiết Phiếu Biểu Quyết (Số: ${voteData.refNum})`;
+                document.getElementById('voteDetailTitleText').textContent = voteData.title;
+                document.getElementById('voteDetailSummaryText').textContent = voteData.summary; // Summary is now the main content
+                const attachmentsList = document.getElementById('voteDetailAttachments');
+                attachmentsList.innerHTML = ''; 
+                if (voteData.attachments && voteData.attachments.length > 0) {
+                    voteData.attachments.forEach(file => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<a href="${file.url}" target="_blank" onclick="event.preventDefault(); mockDownload('${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${(file.size / 1024).toFixed(1)} KB)`;
+                        attachmentsList.appendChild(li);
+                    });
+                } else {
+                    attachmentsList.innerHTML = '<li>Không có file đính kèm.</li>';
+                }
+                document.getElementById('submitVoteForm').reset();
+                document.getElementById('userDisagreeReason').style.display = 'none';
+                document.getElementById('userOtherOpinion').style.display = 'none';
+
+                const userVote = voteData.results.find(r => r.userId === appData.currentUser.username);
+                const voteActionSection = document.getElementById('voteActionSection');
+                const voteStatusMessage = document.getElementById('voteStatusMessage'); 
+                const exportButton = document.getElementById('exportVoteResultsButton');
+
+                const isUserAssigned = voteData.assignees.includes(appData.currentUser.username) || 
+                                     (voteData.assignees.includes('all') && appData.currentUser.role === 'User');
+
+                if (appData.currentUser.role === 'Admin') {
+                    voteActionSection.style.display = 'none';
+                    voteStatusMessage.className = 'alert alert-warning';
+                    voteStatusMessage.textContent = 'Admin có thể xem chi tiết nhưng không tham gia biểu quyết.';
+                    voteStatusMessage.style.display = 'block';
+                } else if (userVote) {
+                    voteActionSection.style.display = 'none';
+                    voteStatusMessage.className = 'alert alert-info';
+                    voteStatusMessage.textContent = `Bạn đã biểu quyết: ${userVote.option === 'agree' ? 'Đồng ý' : userVote.option === 'disagree' ? 'Không đồng ý' : 'Ý kiến khác'}${userVote.reason ? ' - ' + userVote.reason : ''} vào lúc ${userVote.timestamp}.`;
+                    voteStatusMessage.style.display = 'block';
+                } else if (isUserAssigned) { 
+                    voteActionSection.style.display = 'block';
+                    voteStatusMessage.style.display = 'none';
+                } else { 
+                     voteActionSection.style.display = 'none';
+                     voteStatusMessage.className = 'alert alert-secondary';
+                     voteStatusMessage.textContent = 'Bạn không được chỉ định để biểu quyết cho phiếu này.';
+                     voteStatusMessage.style.display = 'block';
+                }
+
+                if (voteData.status === 'closed' || (appData.currentUser && appData.currentUser.role === 'Admin')) {
+                    exportButton.style.display = 'inline-block';
+                    exportButton.onclick = function() {
+                        showCustomAlert(`Đang xuất kết quả cho phiếu: "${voteData.title}" (Mô phỏng).`);
+                    };
+                } else {
+                    exportButton.style.display = 'none';
+                }
+            }
+
+            const submitVoteForm = document.getElementById('submitVoteForm');
+            if (submitVoteForm) {
+                 const userVoteOptionRadios = submitVoteForm.querySelectorAll('input[name="userVoteOption"]');
+                 const userDisagreeReasonTextarea = document.getElementById('userDisagreeReason');
+                 const userOtherOpinionTextarea = document.getElementById('userOtherOpinion');
+
+                userVoteOptionRadios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        userDisagreeReasonTextarea.style.display = (this.value === 'disagree' && this.checked) ? 'block' : 'none';
+                        userDisagreeReasonTextarea.required = (this.value === 'disagree' && this.checked);
+                        
+                        userOtherOpinionTextarea.style.display = (this.value === 'other' && this.checked) ? 'block' : 'none';
+                        userOtherOpinionTextarea.required = (this.value === 'other' && this.checked);
+                    });
+                });
+
+                submitVoteForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const voteId = parseInt(currentVoteIdInput.value);
+                    const voteToUpdate = appData.votes.find(v => v.id === voteId);
+
+                    if (!voteToUpdate) {
+                        showCustomAlert("Lỗi: Không tìm thấy phiếu biểu quyết để cập nhật.");
+                        return;
+                    }
+                    if (appData.currentUser.role === 'Admin'){
+                         showCustomAlert("Admin không thể tham gia biểu quyết.");
+                         return;
+                    }
+                    if (voteToUpdate.results.find(r => r.userId === appData.currentUser.username)) {
+                        showCustomAlert("Bạn đã biểu quyết cho phiếu này rồi.");
+                        navigateToModule('voteList');
+                        return;
+                    }
+                    const isUserAssignedToSubmit = voteToUpdate.assignees.includes(appData.currentUser.username) ||
+                                               (voteToUpdate.assignees.includes('all') && appData.currentUser.role === 'User');
+                    if (!isUserAssignedToSubmit) {
+                        showCustomAlert("Bạn không được chỉ định để biểu quyết cho phiếu này.");
+                        return;
+                    }
+
+                    const selectedOption = submitVoteForm.querySelector('input[name="userVoteOption"]:checked').value;
+                    let reason = "";
+                    if (selectedOption === 'disagree') {
+                        reason = userDisagreeReasonTextarea.value.trim();
+                        if (!reason) {
+                            showCustomAlert('Vui lòng nhập lý do không đồng ý.'); 
+                            userDisagreeReasonTextarea.focus();
+                            return;
+                        }
+                    } else if (selectedOption === 'other') {
+                        reason = userOtherOpinionTextarea.value.trim();
+                        if (!reason) {
+                            showCustomAlert('Vui lòng nhập nội dung ý kiến khác.'); 
+                            userOtherOpinionTextarea.focus();
+                            return;
+                        }
+                    }
+                    
+                    voteToUpdate.results.push({
+                        userId: appData.currentUser.username,
+                        option: selectedOption,
+                        reason: reason,
+                        timestamp: new Date().toLocaleString('vi-VN')
+                    });
+
+                    showCustomAlert('Gửi biểu quyết thành công!'); 
+                    navigateToModule('voteList');
+                });
+            }
+
+            const backToVoteListButton = document.getElementById('backToVoteList');
+            if (backToVoteListButton) {
+                 backToVoteListButton.addEventListener('click', function() {
+                   navigateToModule('voteList');
+                });
+            }
+            
+            const addUserForm = document.getElementById('addUserForm');
+            if (addUserForm) {
+                 addUserForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const newUsername = document.getElementById('newUserName').value.trim();
+                    const newPassword = document.getElementById('newUserPassword').value;
+                    const newUserRole = document.getElementById('newUserRole').value;
+
+                    if (!newUsername || !newPassword) {
+                        showCustomAlert("Tên đăng nhập và mật khẩu không được để trống.");
+                        return;
+                    }
+                    if (appData.users.find(u => u.username === newUsername)) {
+                        showCustomAlert("Tên đăng nhập đã tồn tại.");
+                        return;
+                    }
+                    const newUserId = appData.users.length > 0 ? Math.max(...appData.users.map(u => u.id)) + 1 : 1;
+                    let defaultPermissions = { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false }; 
+                    if (newUserRole === "Admin") {
+                        defaultPermissions = { createVote: true, voteList: true, endVote: true, voteHistory: true, documentCabinet: true, adminManagement: true };
+                    }
+
+                    appData.users.push({id: newUserId, username: newUsername, password: newPassword, role: newUserRole, permissions: defaultPermissions });
+                    
+                    showCustomAlert('Thêm người dùng thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                    addUserForm.reset();
+                    populateAdminUserList(); 
+                    populatePermissionsTable(); 
+                    populateUserCheckboxes(); 
+                });
+            }
+
+            const uploadDocumentForm = document.getElementById('uploadDocumentForm');
+            if (uploadDocumentForm) {
+                 uploadDocumentForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const files = document.getElementById('documentFile').files;
+                    const docYear = document.getElementById('documentYear').value;
+                    if (files.length > 0) {
+                        for (let i = 0; i < files.length; i++) {
+                            const newDocId = appData.documents.length > 0 ? Math.max(...appData.documents.map(d => d.id)) + 1 : 1;
+                            appData.documents.push({
+                                id: newDocId,
+                                name: files[i].name,
+                                year: docYear,
+                                uploader: appData.currentUser.username,
+                                uploadDate: new Date().toLocaleDateString('vi-VN'),
+                                type: files[i].type,
+                                size: files[i].size
+                            });
+                        }
+                         showCustomAlert(`Tải lên ${files.length} tài liệu thành công!`);
+                         populateDocumentCabinet(); 
+                    } else {
+                         showCustomAlert('Không có file nào được chọn.');
+                    }
+                    bootstrap.Modal.getInstance(document.getElementById('uploadDocumentModal')).hide();
+                    uploadDocumentForm.reset();
+                });
+            }
+
+            function populateEndVoteListTable() {
+                const tableBody = document.getElementById('endVoteTableBody');
+                if (!tableBody) return;
+                tableBody.innerHTML = '';
+                const openVotes = appData.votes.filter(v => v.status === 'open');
+                if (openVotes.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Không có phiếu nào đang mở để kết thúc.</td></tr>';
+                    return;
+                }
+                openVotes.forEach((vote, index) => {
+                    let allPossibleVotersUsernames;
+                    if (vote.assignees.includes('all')) {
+                        allPossibleVotersUsernames = appData.users.filter(u => u.role === 'User').map(u => u.username);
+                    } else {
+                        allPossibleVotersUsernames = vote.assignees.filter(a => a !== 'all');
+                    }
+                    const totalAssigned = allPossibleVotersUsernames.length;
+                    
+                    // Count actual votes cast by assigned users
+                    let votedCount = 0;
+                    allPossibleVotersUsernames.forEach(username => {
+                        if (vote.results.some(r => r.userId === username)) {
+                            votedCount++;
+                        }
+                    });
+
+
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <th scope="row">${index + 1}</th>
+                        <td>${vote.title} (Số: ${vote.refNum})</td>
+                        <td>${vote.date}</td>
+                        <td>${votedCount} / ${totalAssigned}</td>
+                        <td><button class="btn btn-info btn-sm" onclick="showEndVoteDetail(${vote.id})">Xem chi tiết & Kết thúc</button></td>
+                    `;
+                });
+            }
+
+            window.showEndVoteDetail = function(voteId) {
+                const vote = appData.votes.find(v => v.id === voteId);
+                if (!vote) {
+                    showCustomAlert("Không tìm thấy phiếu.");
+                    return;
+                }
+
+                document.getElementById('endVoteDetailTitle').textContent = vote.title;
+                document.getElementById('endVoteDetailRefNum').textContent = vote.refNum;
+
+
+                const usersVotedList = document.getElementById('usersVotedList');
+                const usersNotVotedList = document.getElementById('usersNotVotedList');
+                usersVotedList.innerHTML = '';
+                usersNotVotedList.innerHTML = '';
+
+                let assignedUsernames;
+                if (vote.assignees.includes('all')) {
+                    assignedUsernames = appData.users.filter(u => u.role === 'User').map(u => u.username);
+                } else {
+                    assignedUsernames = vote.assignees.filter(a => a !== 'all');
+                }
+                
+                let allActuallyAssignedHaveVoted = true;
+                if (assignedUsernames.length === 0 && !vote.assignees.includes('all')) { // No specific users and not 'all'
+                     allActuallyAssignedHaveVoted = false; // Cannot end if no one was assigned
+                }
+
+
+                assignedUsernames.forEach(username => {
+                    const userVote = vote.results.find(r => r.userId === username);
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item');
+                    if (userVote) {
+                        let voteText = username;
+                        if (userVote.option === 'agree') voteText += ': <span class="badge bg-success">Đồng ý</span>';
+                        else if (userVote.option === 'disagree') voteText += `: <span class="badge bg-danger">Không đồng ý</span> ${userVote.reason ? '('+userVote.reason+')' : ''}`;
+                        else if (userVote.option === 'other') voteText += `: <span class="badge bg-warning text-dark">Ý kiến khác</span> ${userVote.reason ? '('+userVote.reason+')' : ''}`;
+                        li.innerHTML = voteText;
+                        usersVotedList.appendChild(li);
+                    } else {
+                        li.textContent = username;
+                        li.classList.add('not-voted');
+                        usersNotVotedList.appendChild(li);
+                        allActuallyAssignedHaveVoted = false; 
+                    }
+                });
+
+                 if (usersVotedList.children.length === 0 && assignedUsernames.length > 0) usersVotedList.innerHTML = '<li class="list-group-item text-muted">Chưa có ai trong số những người được chỉ định biểu quyết.</li>';
+                 else if (usersVotedList.children.length === 0 && assignedUsernames.length === 0 && vote.assignees.includes('all')) usersVotedList.innerHTML = '<li class="list-group-item text-muted">Chưa có người dùng ("User") nào biểu quyết (được chỉ định "all").</li>';
+                 else if (usersVotedList.children.length === 0) usersVotedList.innerHTML = '<li class="list-group-item text-muted">Chưa có ai biểu quyết.</li>';
+
+
+                 if (usersNotVotedList.children.length === 0 && assignedUsernames.length > 0) {
+                    usersNotVotedList.innerHTML = '<li class="list-group-item text-success">Tất cả người dùng được chỉ định đã biểu quyết!</li>';
+                 } else if (assignedUsernames.length === 0 && !vote.assignees.includes('all')) {
+                     usersNotVotedList.innerHTML = '<li class="list-group-item text-warning">Không có người dùng nào được chỉ định cụ thể cho phiếu này.</li>';
+                     allActuallyAssignedHaveVoted = false; // Cannot end if no specific assignees and not 'all'
+                 } else if (assignedUsernames.length === 0 && vote.assignees.includes('all')) {
+                     // If 'all' is assigned and no one voted yet, it means no one has voted.
+                     // We need to check if all Users have voted if 'all' is present
+                     const allUsernames = appData.users.filter(u => u.role === 'User').map(u => u.username);
+                     let all_users_voted_flag = true;
+                     allUsernames.forEach(un => {
+                         if (!vote.results.some(r => r.userId === un)) {
+                             all_users_voted_flag = false;
+                             const li = document.createElement('li');
+                             li.textContent = un + " (Chưa biểu quyết - từ 'all')";
+                             li.classList.add('list-group-item', 'not-voted');
+                             usersNotVotedList.appendChild(li);
+                         }
+                     });
+                     if(all_users_voted_flag && allUsernames.length > 0) {
+                        usersNotVotedList.innerHTML = '<li class="list-group-item text-success">Tất cả người dùng ("User") đã biểu quyết!</li>';
+                        allActuallyAssignedHaveVoted = true;
+                     } else if (allUsernames.length === 0){
+                        usersNotVotedList.innerHTML = '<li class="list-group-item text-warning">Không có người dùng ("User") nào trong hệ thống để biểu quyết (được chỉ định "all").</li>';
+                        allActuallyAssignedHaveVoted = false; 
+                     } else {
+                        allActuallyAssignedHaveVoted = false;
+                     }
+                 }
+
+
+                const executeButton = document.getElementById('executeEndVoteButton');
+                const statusMessageEl = document.getElementById('endVoteStatusMessage');
+
+                if (allActuallyAssignedHaveVoted) {
+                    executeButton.disabled = false;
+                    executeButton.dataset.voteId = voteId;
+                    statusMessageEl.textContent = "Tất cả thành viên đã biểu quyết. Bạn có thể kết thúc phiếu này.";
+                    statusMessageEl.className = "mt-2 text-success";
+                } else {
+                    executeButton.disabled = true;
+                    delete executeButton.dataset.voteId;
+                     statusMessageEl.textContent = "Chưa thể kết thúc. Còn thành viên chưa biểu quyết hoặc không có người dùng nào được chỉ định.";
+                    statusMessageEl.className = "mt-2 text-danger";
+                }
+
+                endVoteListContainer.style.display = 'none';
+                endVoteDetailContainer.style.display = 'block';
+            }
+            
+            if(backToEndVoteListButton){
+                backToEndVoteListButton.addEventListener('click', function() {
+                    endVoteDetailContainer.style.display = 'none';
+                    endVoteListContainer.style.display = 'block';
+                    populateEndVoteListTable(); 
+                });
+            }
+
+            if(executeEndVoteButton) {
+                executeEndVoteButton.addEventListener('click', function() {
+                    const voteIdToEnd = parseInt(this.dataset.voteId);
+                    if (!voteIdToEnd) return;
+
+                    const voteToEnd = appData.votes.find(v => v.id === voteIdToEnd);
+                    if (voteToEnd) {
+                        voteToEnd.status = 'closed';
+                        showCustomAlert(`Đã kết thúc biểu quyết: "${voteToEnd.title}"`);
+                        
+                        updateDashboardCounts();
+                        populateVoteList(); 
+                        populateAdminVoteList(); 
+                        populateHistoryAccordion(); 
+
+                        endVoteDetailContainer.style.display = 'none';
+                        endVoteListContainer.style.display = 'block';
+                        populateEndVoteListTable();
+                    }
+                });
+            }
+
+
+            function populateAdminUserList() {
+                const tableBody = document.getElementById('userListTableBody');
+                if (!tableBody) { console.error("[AdminDebug] userListTableBody not found!"); return; }
+                tableBody.innerHTML = '';
+                appData.users.forEach(user => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.role}</td>
+                        <td>
+                            ${user.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})"><i class="fas fa-trash-alt"></i> Xóa</button>` : ''}
+                        </td>
+                    `;
+                });
+                 console.log("[AdminDebug] Populated admin user list. Users count:", appData.users.length);
+            }
+            window.deleteUser = function(userId) { 
+                if (confirm("Bạn có chắc muốn xóa người dùng này? Hành động này không thể hoàn tác.")) {
+                    appData.users = appData.users.filter(u => u.id !== userId);
+                    populateAdminUserList();
+                    populatePermissionsTable();
+                    populateUserCheckboxes(); 
+                    showCustomAlert("Đã xóa người dùng.");
+                }
+            };
+
+            function populateAdminVoteList() {
+                const tableBody = document.getElementById('adminVoteListTableBody');
+                 if (!tableBody) { console.error("[AdminDebug] adminVoteListTableBody not found!"); return; }
+                tableBody.innerHTML = '';
+                appData.votes.forEach(vote => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${vote.id}</td>
+                        <td>${vote.title} (Số: ${vote.refNum})</td>
+                        <td><span class="badge ${vote.status === 'open' ? 'bg-success' : 'bg-secondary'}">${vote.status === 'open' ? 'Đang mở' : 'Đã kết thúc'}</span></td>
+                        <td>
+                            ${vote.status === 'open' ? `<button class="btn btn-danger btn-sm" onclick="deleteVote(${vote.id})"><i class="fas fa-trash-alt"></i> Xóa</button>` : '<button class="btn btn-secondary btn-sm" disabled><i class="fas fa-trash-alt"></i> Xóa</button>'}
+                        </td>
+                    `;
+                });
+                console.log("[AdminDebug] Populated admin vote list. Votes count:", appData.votes.length);
+            }
+             window.deleteVote = function(voteId) { 
+                if (confirm("Bạn có chắc muốn xóa phiếu biểu quyết này? Chỉ phiếu đang mở mới có thể xóa.")) {
+                    appData.votes = appData.votes.filter(v => v.id !== voteId);
+                    populateAdminVoteList();
+                    populateVoteList();
+                    populateEndVoteListTable();
+                    updateDashboardCounts();
+                    showCustomAlert("Đã xóa phiếu biểu quyết.");
+                }
+            };
+            
+            function populatePermissionsTable() {
+                const tableBody = document.getElementById('permissionsTableBody');
+                if (!tableBody) { console.error("[AdminDebug] permissionsTableBody not found!"); return; }
+                tableBody.innerHTML = '';
+                appData.users.forEach(user => {
+                    const row = tableBody.insertRow();
+                    let cells = `<td>${user.username}</td>`;
+                    Object.keys(user.permissions).forEach(permKey => {
+                        cells += `<td><input type="checkbox" class="form-check-input permission-checkbox" data-userid="${user.id}" data-permission="${permKey}" ${user.permissions[permKey] ? 'checked' : ''} ${user.username === 'admin' ? 'disabled' : ''}></td>`;
+                    });
+                    row.innerHTML = cells;
+                });
+                 console.log("[AdminDebug] Populated permissions table. Users count:", appData.users.length);
+            }
+
+            const savePermissionsButton = document.getElementById('savePermissionsButton');
+            if(savePermissionsButton) {
+                savePermissionsButton.addEventListener('click', function() {
+                    document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                        const userId = parseInt(checkbox.dataset.userid);
+                        const permissionKey = checkbox.dataset.permission;
+                        const user = appData.users.find(u => u.id === userId);
+                        if (user && user.username !== 'admin') { 
+                            user.permissions[permissionKey] = checkbox.checked;
+                        }
+                    });
+                    showCustomAlert("Đã lưu thay đổi phân quyền.");
+                    if(appData.currentUser.username !== 'admin' && !appData.currentUser.permissions.adminManagement){ 
+                        applyPermissionsToUI(); 
+                        navigateToModule('dashboardHome'); 
+                    } else {
+                         applyPermissionsToUI(); 
+                    }
+                });
+            }
+            
+            function populateDocumentCabinet() {
+                const accordionContainer = document.getElementById('documentAccordion');
+                if (!accordionContainer) { console.error("[CabinetDebug] accordionContainer not found!"); return; }
+                accordionContainer.innerHTML = ''; 
+                console.log("[CabinetDebug] Populating document cabinet. Docs count before processing:", appData.documents.length);
+                
+                const years = [...new Set(appData.documents.map(doc => doc.year))].sort((a,b) => b-a); 
+
+                if (years.length === 0) {
+                    accordionContainer.innerHTML = '<p class="text-center text-muted">Không có tài liệu nào.</p>';
+                    console.log("[CabinetDebug] No documents to display.");
+                    return;
+                }
+
+                years.forEach((year, index) => {
+                    const yearDocs = appData.documents.filter(doc => doc.year === year);
+                    const collapseId = `collapseDocs${year}`;
+                    const headingId = `headingDocs${year}`;
+                    const isExpanded = index === 0; 
+
+                    const accordionItem = document.createElement('div');
+                    accordionItem.classList.add('accordion-item');
+                    accordionItem.innerHTML = `
+                        <h2 class="accordion-header" id="${headingId}">
+                            <button class="accordion-button ${isExpanded ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="${isExpanded}" aria-controls="${collapseId}">
+                                Thư mục ${year} (${yearDocs.length} tài liệu)
+                            </button>
+                        </h2>
+                        <div id="${collapseId}" class="accordion-collapse collapse ${isExpanded ? 'show' : ''}" aria-labelledby="${headingId}" data-bs-parent="#documentAccordion">
+                            <div class="accordion-body table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead><tr><th>Tên file</th><th>Ngày upload</th><th>Người upload</th><th>Kích thước</th><th>Hành động</th></tr></thead>
+                                    <tbody>
+                                        ${yearDocs.map(doc => `
+                                            <tr>
+                                                <td>${doc.name}</td>
+                                                <td>${doc.uploadDate}</td>
+                                                <td>${doc.uploader}</td>
+                                                <td>${(doc.size / 1024).toFixed(1)} KB</td>
+                                                <td>
+                                                    <a href="#" class="btn btn-info btn-sm" onclick="event.preventDefault(); mockDownload('${doc.name.replace(/'/g, "\\'")}')"><i class="fas fa-download"></i></a> 
+                                                    ${appData.currentUser && appData.currentUser.role === 'Admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteDocument(${doc.id})"><i class="fas fa-trash"></i></button>` : ''}
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                        ${yearDocs.length === 0 ? '<tr><td colspan="5" class="text-center text-muted">Không có tài liệu trong thư mục này.</td></tr>' : ''}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    accordionContainer.appendChild(accordionItem);
+                });
+                console.log("[CabinetDebug] Document cabinet populated with years:", years.join(', '));
+            }
+            window.deleteDocument = function(docId) { 
+                if (confirm("Bạn có chắc muốn xóa tài liệu này?")) {
+                    appData.documents = appData.documents.filter(d => d.id !== docId);
+                    populateDocumentCabinet();
+                    showCustomAlert("Đã xóa tài liệu.");
+                }
+            }
+
+            function populateHistoryAccordion() {
+                const accordionContainer = document.getElementById('historyAccordion');
+                if (!accordionContainer) return;
+                accordionContainer.innerHTML = '';
+                const closedVotes = appData.votes.filter(v => v.status === 'closed');
+                
+                const votesByYear = closedVotes.reduce((acc, vote) => {
+                    const year = new Date(vote.date.split('/').reverse().join('-')).getFullYear();
+                    if (!acc[year]) acc[year] = [];
+                    acc[year].push(vote);
+                    return acc;
+                }, {});
+
+                const sortedYears = Object.keys(votesByYear).sort((a, b) => b - a); 
+
+                if (sortedYears.length === 0) {
+                    accordionContainer.innerHTML = '<p class="text-center text-muted">Chưa có phiếu nào được hoàn thành.</p>';
+                    return;
+                }
+
+                sortedYears.forEach((year, index) => {
+                    const yearVotes = votesByYear[year];
+                    const collapseId = `collapseHistoryYear${year}`;
+                    const headingId = `headingHistoryYear${year}`;
+                    const isExpanded = index === 0;
+
+                    const accordionItem = document.createElement('div');
+                    accordionItem.classList.add('accordion-item');
+                    let listItems = yearVotes.map(vote => {
+                        let agreeCount = vote.results.filter(r => r.option === 'agree').length;
+                        let disagreeCount = vote.results.filter(r => r.option === 'disagree').length;
+                        let otherCount = vote.results.filter(r => r.option === 'other').length;
+                        let totalVotesCast = vote.results.length;
+                        
+                        let agreePercent = totalVotesCast > 0 ? (agreeCount / totalVotesCast * 100) : 0;
+                        let disagreePercent = totalVotesCast > 0 ? (disagreeCount / totalVotesCast * 100) : 0;
+                        let otherPercent = totalVotesCast > 0 ? (otherCount / totalVotesCast * 100) : 0;
+                        
+                        return `<li class="list-group-item d-flex justify-content-between align-items-center" 
+                                    onclick="showHistoryDetailModal(${vote.id}, '${vote.title.replace(/'/g, "\\'")}', [${agreePercent.toFixed(0)}, ${disagreePercent.toFixed(0)}, ${otherPercent.toFixed(0)}])" 
+                                    style="cursor:pointer;">
+                                    ${vote.title} (Số: ${vote.refNum}) (Hoàn thành: ${vote.date})
+                                    <span class="badge bg-primary rounded-pill">Xem chi tiết</span>
+                                </li>`;
+                    }).join('');
+                     if (yearVotes.length === 0) {
+                        listItems = '<li class="list-group-item text-muted">Không có phiếu nào hoàn thành trong năm này.</li>';
+                    }
+                    accordionItem.innerHTML = `
+                        <h2 class="accordion-header" id="${headingId}">
+                            <button class="accordion-button ${isExpanded ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="${isExpanded}" aria-controls="${collapseId}">
+                                Năm ${year}
+                            </button>
+                        </h2>
+                        <div id="${collapseId}" class="accordion-collapse collapse ${isExpanded ? 'show' : ''}" aria-labelledby="${headingId}" data-bs-parent="#historyAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-group">
+                                   ${listItems}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    accordionContainer.appendChild(accordionItem);
+                });
+            }
+
+
+            // Initial setup calls on page load
+            populateAllDynamicContent();
+            applyPermissionsToUI(); 
+            if (!appData.currentUser) { 
+                loginPage.style.display = 'flex'; 
+                dashboardPage.style.display = 'none';
+            } else { 
+                loginPage.style.display = 'none';
+                dashboardPage.style.display = 'block'; 
+                navigateToModule('dashboardHome');
+            }
+
+        });
+
+        let voteChartInstance = null;
+        function showHistoryDetailModal(voteId, voteTitleDisplay, chartData) { 
+             const modalElement = document.getElementById('historyDetailModal');
+            if (!modalElement) return;
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            
+            const vote = appData.votes.find(v => v.id === voteId); 
+            if (!vote) {
+                showCustomAlert("Không tìm thấy thông tin phiếu biểu quyết.");
+                return;
+            }
+
+            document.getElementById('historyVoteTitle').textContent = `${vote.title} (Số: ${vote.refNum})`;
+            
+            let conclusionText = "";
+            if (chartData[0] >= 50) {
+                conclusionText = `Biểu quyết thông qua với tỷ lệ Đồng ý ${chartData[0]}%.`;
+            } else {
+                conclusionText = `Biểu quyết không thông qua. Tỷ lệ Đồng ý ${chartData[0]}%.`;
+            }
+            document.getElementById('voteConclusion').textContent = conclusionText;
+
+            const voterListUl = document.getElementById('voterList');
+            voterListUl.innerHTML = ''; 
+            const otherOpinionsForSummary = [];
+            if (vote.results && vote.results.length > 0) {
+                 vote.results.forEach(result => {
+                    const userDetail = appData.users.find(u => u.username === result.userId) || {username: result.userId}; 
+                    let resultText = `${userDetail.username}: ${result.option === 'agree' ? 'Đồng ý' : result.option === 'disagree' ? 'Không đồng ý' : 'Ý kiến khác'}`;
+                    if (result.reason) {
+                        resultText += ` - Lý do/Ý kiến: ${result.reason}`;
+                        if (result.option === 'other' || (result.option === 'disagree' && result.reason.trim() !== '')) { 
+                           otherOpinionsForSummary.push(result.reason);
+                        }
+                    }
+                    resultText += ` (${result.timestamp})`;
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item');
+                    li.textContent = resultText;
+                    voterListUl.appendChild(li);
+                });
+            } else {
+                voterListUl.innerHTML = '<li class="list-group-item text-muted">Không có dữ liệu biểu quyết.</li>';
+            }
+            
+            const summarizeButtonContainer = document.getElementById('otherOpinionsSummaryContainer');
+            const summarizeButton = document.getElementById('summarizeOtherOpinionsButton'); //This is for history modal, not related to create vote
+            const geminiSummaryDiv = document.getElementById('geminiOtherOpinionsSummary');
+            const otherOpinionsSpinner = document.getElementById('otherOpinionsLoadingSpinner');
+
+            if (appData.currentUser && appData.currentUser.role === 'Admin' && otherOpinionsForSummary.length > 0 && summarizeButton) { // Check if summarizeButton exists
+                summarizeButtonContainer.style.display = 'block';
+                geminiSummaryDiv.style.display = 'none'; 
+                geminiSummaryDiv.innerHTML = '';
+                
+                summarizeButton.onclick = async function() { 
+                    otherOpinionsSpinner.style.display = 'inline-block';
+                    summarizeButton.disabled = true;
+                    try {
+                        const opinionsText = otherOpinionsForSummary.join("\n---\n");
+                        const prompt = `Tóm tắt các ý kiến và lý do sau đây thành những điểm chính, viết bằng tiếng Việt:\n\n${opinionsText}`;
+                        const summary = await callGeminiAPI(prompt);
+                        geminiSummaryDiv.innerHTML = `<p><strong>✨ Tóm tắt ý kiến bằng Gemini:</strong></p><p>${summary.replace(/\n/g, '<br>')}</p>`;
+                        geminiSummaryDiv.style.display = 'block';
+                    } catch (error) {
+                        showCustomAlert(`Lỗi khi tóm tắt ý kiến: ${error.message}`);
+                        geminiSummaryDiv.innerHTML = `<p class="text-danger">Không thể tạo tóm tắt.</p>`;
+                        geminiSummaryDiv.style.display = 'block';
+                    } finally {
+                        otherOpinionsSpinner.style.display = 'none';
+                        summarizeButton.disabled = false;
+                    }
+                };
+
+            } else {
+                summarizeButtonContainer.style.display = 'none';
+                geminiSummaryDiv.style.display = 'none';
+            }
+
+
+            const historyAttachmentsUl = document.getElementById('historyAttachments');
+            historyAttachmentsUl.innerHTML = ''; 
+            if (vote.attachments && vote.attachments.length > 0) {
+                 vote.attachments.forEach(file => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="#" onclick="event.preventDefault(); mockDownload('${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${(file.size / 1024).toFixed(1)} KB)`;
+                    historyAttachmentsUl.appendChild(li);
+                });
+            }
+            const safeVoteTitle = vote.title.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+             const generatedFiles = [
+                { name: `NghiQuyet_${safeVoteTitle}.pdf`, type: "Nghị quyết" },
+                { name: `BienBanTongHop_${safeVoteTitle}.pdf`, type: "Biên bản tổng hợp" },
+            ];
+            if (vote.results && vote.results.length > 0) {
+                vote.results.forEach(result => {
+                     generatedFiles.push({ name: `PhieuBieuQuyet_${result.userId}_${safeVoteTitle}.pdf`, type: `Phiếu BQ của ${result.userId}` });
+                });
+            }
+            generatedFiles.forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="#" onclick="event.preventDefault(); mockDownload('${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${file.type})`;
+                historyAttachmentsUl.appendChild(li);
+            });
+            if (historyAttachmentsUl.children.length === 0) {
+                 historyAttachmentsUl.innerHTML = '<li class="text-muted">Không có tài liệu nào.</li>';
+            }
+
+            const ctx = document.getElementById('voteChart').getContext('2d');
+            if (voteChartInstance) {
+                voteChartInstance.destroy();
+            }
+            voteChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Đồng ý', 'Không đồng ý', 'Ý kiến khác'],
+                    datasets: [{
+                        label: 'Tỷ lệ biểu quyết',
+                        data: chartData, 
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.7)', 
+                            'rgba(255, 99, 132, 0.7)',  
+                            'rgba(255, 205, 86, 0.7)'  
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(255, 205, 86, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return (context.label || '') + ': ' + (context.parsed || 0) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            modal.show();
+        }
+
+        function mockDownload(filename) {
+            const content = `Đây là nội dung mô phỏng cho file: ${filename}\nNgày tạo: ${new Date().toLocaleDateString('vi-VN')}`;
+            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+            try {
+                 FileSaver.saveAs(blob, filename);
+            } catch(e) {
+                console.error("FileSaver.js is not loaded or error during save:", e);
+                 showCustomAlert(`Lỗi khi tải file (mô phỏng): ${filename}`);
+            }
+        }
+    </script>
+</body>
+</html>
