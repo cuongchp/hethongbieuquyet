@@ -242,6 +242,24 @@
         .list-group-item.voted-disagree { background-color: #f8d7da; }
         .list-group-item.voted-other { background-color: #fff3cd; }
         .list-group-item.not-voted { background-color: #e9ecef; }
+        #pdfDisplayModalBody {
+            white-space: pre-wrap; 
+            font-family: 'Courier New', Courier, monospace; /* Monospaced font for better text alignment */
+            font-size: 0.85rem; /* Slightly smaller for more content visibility */
+            line-height: 1.4;
+            max-height: 75vh; /* Limit height and enable scrolling */
+            overflow-y: auto;
+            background-color: #fdfdfd;
+            padding: 1.5rem;
+            border: 1px solid #eee;
+            border-radius: 0.375rem;
+        }
+        #pdfDisplayModalBody hr {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border-style: dashed;
+        }
+
 
     </style>
 </head>
@@ -701,30 +719,87 @@
       </div>
     </div>
 
+    <!-- PDF Display Modal -->
+    <div class="modal fade" id="pdfDisplayModal" tabindex="-1" aria-labelledby="pdfDisplayModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header modal-header-custom">
+            <h5 class="modal-title" id="pdfDisplayModalLabel">Xem Tài Liệu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="pdfDisplayModalBody">
+            <!-- PDF content will be injected here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
 
     <script>
         // --- Global Data Store (Simulating Backend/LocalStorage) ---
+        const UPLOADED_PDF_CONTENT = `--- DEMO ---
+`;
+
         let appData = {
             currentUser: null, 
             users: [
                 { id: 1, username: 'admin', password: 'admin', role: 'Admin', permissions: { createVote: true, voteList: true, endVote: true, voteHistory: true, documentCabinet: true, adminManagement: true } },
-                { id: 2, username: 'user1', password: 'user123', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
-                { id: 3, username: 'user2', password: 'user234', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
-                { id: 4, username: 'user3', password: 'user345', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
-                { id: 5, username: 'user4', password: 'user456', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
-                { id: 6, username: 'user5', password: 'user567', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
-                { id: 7, username: 'demo', password: 'demo', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } } 
+                { id: 2, username: 'Lê Văn Thuyết - CT HĐQT', password: 'user123', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 3, username: 'Lê Quý Anh Tuấn - TV HĐQT - TGĐ', password: 'user234', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 4, username: 'Nguyễn Trần Bảo An - TV HĐQT', password: 'user345', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 5, username: 'Nguyễn Đức An - TV HĐQT', password: 'user456', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 6, username: 'Bùi Thế Huy - TV HĐQT', password: 'user567', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 7, username: 'Nguyễn Phong Danh - TV HĐQT', password: 'demo', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } },
+                { id: 8, username: 'Lê Văn Diễn - TV HĐQT', password: 'user789', role: 'User', permissions: { createVote: false, voteList: true, endVote: false, voteHistory: true, documentCabinet: true, adminManagement: false } } 
             ],
             votes: [
-                // Sample Open Votes
-                { id: 1, refNum: "01/2025/CHP-HĐQT", title: "Biểu quyết về chính sách làm việc từ xa", detailedContent: "Nội dung chi tiết về chính sách làm việc từ xa...", summary: "Đề xuất chính sách làm việc từ xa 2 ngày/tuần.", attachments: [{name: "ChinhSachLamViecTuXa.pdf", url:"#", type: "application/pdf", size: 120000}], date: "01/06/2025", deadlineInfo: "Còn 7 ngày", status: "open", creator: "admin", assignees: ["user1", "user2", "user3", "all"], options: ["agree", "disagree", "other"], results: [ {userId: "user1", option: "agree", reason: "", timestamp: "02/06/2025 10:00"} ] }, 
-                { id: 2, refNum: "02/2025/CHP-HĐQT", title: "Phê duyệt nhà cung cấp mới", detailedContent: "Nội dung chi tiết về việc phê duyệt nhà cung cấp...", summary: "Phê duyệt nhà cung cấp ABC.", attachments: [], date: "03/06/2025", deadlineInfo: "Còn 10 ngày", status: "open", creator: "admin", assignees: ["user1", "user2"], options: ["agree", "disagree", "other"], results: [ {userId: "user1", option: "agree", reason: "", timestamp: "04/06/2025 11:00"}, {userId: "user2", option: "disagree", reason: "Giá cao", timestamp: "04/06/2025 12:00"} ] }, 
-                { id: 3, refNum: "03/2025/CHP-HĐQT", title: "Kế hoạch tổ chức sự kiện", detailedContent: "Nội dung chi tiết về kế hoạch sự kiện...", summary: "Kế hoạch sự kiện 10 năm thành lập.", attachments: [], date: "05/06/2025", deadlineInfo: "Còn 12 ngày", status: "open", creator: "admin", assignees: ["user4", "user5", "demo"], options: ["agree", "disagree", "other"], results: [] }, 
-                { id: 6, refNum: "01/2024/CHP-HĐQT", title: "Phê duyệt ngân sách Marketing Q1/2024", detailedContent: "Chi tiết ngân sách dành cho các hoạt động Marketing trong Quý 1 năm 2024, bao gồm quảng cáo trực tuyến, sự kiện và tài liệu quảng bá.", summary: "Ngân sách Marketing Q1/2024.", attachments: [], date: "10/01/2024", status: "closed", creator: "admin", assignees: ["user1", "user2"], results: [{userId: "user1", option: "agree", reason: "", timestamp: "12/01/2024 10:00"}, {userId: "user2", option: "agree", reason: "", timestamp: "12/01/2024 11:30"}] },
-                { id: 7, refNum: "02/2024/CHP-HĐQT", title: "Kế hoạch tuyển dụng nhân sự phòng Kỹ thuật", detailedContent: "Kế hoạch tuyển dụng 02 kỹ sư phần mềm và 01 chuyên viên kiểm thử cho phòng Kỹ thuật để đáp ứng nhu cầu phát triển dự án mới.", summary: "Tuyển dụng nhân sự phòng Kỹ thuật.", attachments: [{name: "KeHoachTuyenDungKT.pdf", url:"#", type: "application/pdf", size: 80000}], date: "15/02/2024", status: "closed", creator: "admin", assignees: ["user3", "user4"], results: [{userId: "user3", option: "agree", reason: "", timestamp: "17/02/2024 14:00"}, {userId: "user4", option: "disagree", reason: "Cần xem xét lại số lượng tuyển dụng.", timestamp: "17/02/2024 15:00"}] },
+                { 
+                    id: 1, 
+                    refNum: "01/2025/CHP-HĐQT", 
+                    title: "Biểu quyết báo cáo kiểm toán nội bộ năm 2024", 
+                    detailedContent: "Các nội dung báo cáo kiểm toán nội bộ năm 2024 của Công ty CP thủy điên Miền Trung", 
+                    summary: "", 
+                    attachments: [
+                        {
+                            name: "Báo cáo Kiểm toán nội bộ 2024.pdf", // Display name
+                            url:"#", 
+                            type: "application/pdf", 
+                            size: 120000, 
+                            isUploadedPdf: true, 
+                            originalUploadedName: "2. TO TRINH LAY Y KIEN.pdf", 
+                            uploadedFileContent: UPLOADED_PDF_CONTENT 
+                        }
+                    ], 
+                    date: "01/06/2025", 
+                    deadlineInfo: "Còn 7 ngày", 
+                    status: "open", 
+                    creator: "admin", 
+                    assignees: ["Lê Văn Thuyết - CT HĐQT", "Lê Quý Anh Tuấn - TV HĐQT - TGĐ", "Nguyễn Trần Bảo An - TV HĐQT", "all"], 
+                    options: ["agree", "disagree", "other"], 
+                    results: [ {userId: "Lê Văn Thuyết - CT HĐQT", option: "agree", reason: "", timestamp: "02/06/2025 10:00"} ] 
+                }, 
+                { 
+                    id: 6, 
+                    refNum: "01/2024/CHP-HĐQT", 
+                    title: "Biểu quyết báo cáo kiểm toán nội bộ năm 2024", 
+                    detailedContent: "Các nội dung báo cáo kiểm toán nội bộ năm 2024 của Công ty CP thủy điên Miền Trung", 
+                    summary: "Ngân sách Marketing Q1/2024.", 
+                    attachments: [], 
+                    date: "10/01/2024", 
+                    status: "closed", 
+                    creator: "admin", 
+                    assignees: ["Lê Văn Thuyết - CT HĐQT", "Lê Quý Anh Tuấn - TV HĐQT - TGĐ"], 
+                    results: [
+                        {userId: "Lê Văn Thuyết - CT HĐQT", option: "agree", reason: "", timestamp: "12/01/2024 10:00"}, 
+                        {userId: "Lê Quý Anh Tuấn - TV HĐQT - TGĐ", option: "agree", reason: "", timestamp: "12/01/2024 11:30"}
+                    ] 
+                }
             ],
             documents: [ 
                 { id: 1, name: "BaoCaoTaiChinh_Q1_2025.pdf", year: "2025", uploader: "admin", uploadDate: "10/04/2025", type: "application/pdf", size: 307200 },
@@ -732,9 +807,8 @@
             ]
         };
 
-        const GEMINI_API_KEY = ""; // Keep this, might be used for other Gemini features in future
+        const GEMINI_API_KEY = ""; 
 
-        // callGeminiAPI function is no longer needed for summary generation but kept for potential future use
         async function callGeminiAPI(promptText) {
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
             let chatHistory = [{ role: "user", parts: [{ text: promptText }] }];
@@ -796,10 +870,9 @@
             const assigneeAllUsersCheckbox = document.getElementById('assigneeAllUsers');
             const individualUserCheckboxesContainer = document.getElementById('individualUserCheckboxes');
             
-            // Removed generateSummaryButton and summaryLoadingSpinner as they are no longer used
             const voteSummaryTextarea = document.getElementById('voteSummary'); 
             
-            const summarizeOtherOpinionsButton = document.getElementById('summarizeOtherOpinionsButton'); // For history modal
+            const summarizeOtherOpinionsButton = document.getElementById('summarizeOtherOpinionsButton'); 
             const otherOpinionsSummaryContainer = document.getElementById('otherOpinionsSummaryContainer');
             const geminiOtherOpinionsSummaryDiv = document.getElementById('geminiOtherOpinionsSummary');
             const otherOpinionsLoadingSpinner = document.getElementById('otherOpinionsLoadingSpinner');
@@ -817,8 +890,8 @@
                  if(individualUserCheckboxesContainer) {
                     const userCheckboxesHtml = appData.users.filter(u => u.role === 'User').map(user => `
                         <div class="form-check">
-                            <input class="form-check-input assignee-checkbox-user" type="checkbox" value="${user.username}" id="assignee${user.username}">
-                            <label class="form-check-label" for="assignee${user.username}">${user.username}</label>
+                            <input class="form-check-input assignee-checkbox-user" type="checkbox" value="${user.username}" id="assignee${user.username.replace(/\s+/g, '_')}">
+                            <label class="form-check-label" for="assignee${user.username.replace(/\s+/g, '_')}">${user.username}</label>
                         </div>
                     `).join('');
                     individualUserCheckboxesContainer.innerHTML = userCheckboxesHtml;
@@ -838,14 +911,24 @@
                 const voteListGroup = document.querySelector('#voteListModule .list-group');
                 if (!voteListGroup) return;
                 voteListGroup.innerHTML = ''; 
-                const openVotes = appData.votes.filter(v => v.status === 'open');
 
-                if (openVotes.length === 0) {
-                    voteListGroup.innerHTML = '<p class="text-center text-muted">Không có phiếu nào đang mở.</p>';
+                let votesToDisplay = appData.votes.filter(v => v.status === 'open');
+
+                if (appData.currentUser && appData.currentUser.role !== 'Admin') {
+                    votesToDisplay = votesToDisplay.filter(vote => 
+                        !vote.results.some(result => result.userId === appData.currentUser.username) &&
+                        (vote.assignees.includes(appData.currentUser.username) || 
+                         (vote.assignees.includes('all') && appData.currentUser.role === 'User'))
+                    );
+                }
+
+
+                if (votesToDisplay.length === 0) {
+                    voteListGroup.innerHTML = '<p class="text-center text-muted">Không có phiếu nào đang mở cần bạn biểu quyết.</p>';
                     return;
                 }
 
-                openVotes.forEach(vote => {
+                votesToDisplay.forEach(vote => {
                     const item = document.createElement('a');
                     item.href = "#";
                     item.className = "list-group-item list-group-item-action";
@@ -860,6 +943,10 @@
                     `;
                     voteListGroup.appendChild(item);
                 });
+                 
+                if (voteListGroup.children.length === 0) { 
+                     voteListGroup.innerHTML = '<p class="text-center text-muted">Không có phiếu nào đang mở cần bạn biểu quyết.</p>';
+                }
             }
             
             function navigateToModule(moduleId) {
@@ -1205,13 +1292,13 @@
                 currentVoteIdInput.value = voteData.id; 
                 document.getElementById('detailVoteTitle').textContent = `Chi Tiết Phiếu Biểu Quyết (Số: ${voteData.refNum})`;
                 document.getElementById('voteDetailTitleText').textContent = voteData.title;
-                document.getElementById('voteDetailSummaryText').textContent = voteData.summary; // Summary is now the main content
+                document.getElementById('voteDetailSummaryText').textContent = voteData.summary; 
                 const attachmentsList = document.getElementById('voteDetailAttachments');
                 attachmentsList.innerHTML = ''; 
                 if (voteData.attachments && voteData.attachments.length > 0) {
                     voteData.attachments.forEach(file => {
                         const li = document.createElement('li');
-                        li.innerHTML = `<a href="${file.url}" target="_blank" onclick="event.preventDefault(); mockDownload('${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${(file.size / 1024).toFixed(1)} KB)`;
+                        li.innerHTML = `<a href="#" onclick="event.preventDefault(); handleAttachmentClick('vote', ${voteData.id}, '${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${(file.size / 1024).toFixed(1)} KB)`;
                         attachmentsList.appendChild(li);
                     });
                 } else {
@@ -1290,6 +1377,7 @@
                     }
                     if (voteToUpdate.results.find(r => r.userId === appData.currentUser.username)) {
                         showCustomAlert("Bạn đã biểu quyết cho phiếu này rồi.");
+                        populateVoteList(); 
                         navigateToModule('voteList');
                         return;
                     }
@@ -1326,7 +1414,8 @@
                     });
 
                     showCustomAlert('Gửi biểu quyết thành công!'); 
-                    navigateToModule('voteList');
+                    populateVoteList(); 
+                    navigateToModule('voteList'); 
                 });
             }
 
@@ -1417,7 +1506,6 @@
                     }
                     const totalAssigned = allPossibleVotersUsernames.length;
                     
-                    // Count actual votes cast by assigned users
                     let votedCount = 0;
                     allPossibleVotersUsernames.forEach(username => {
                         if (vote.results.some(r => r.userId === username)) {
@@ -1461,8 +1549,8 @@
                 }
                 
                 let allActuallyAssignedHaveVoted = true;
-                if (assignedUsernames.length === 0 && !vote.assignees.includes('all')) { // No specific users and not 'all'
-                     allActuallyAssignedHaveVoted = false; // Cannot end if no one was assigned
+                if (assignedUsernames.length === 0 && !vote.assignees.includes('all')) { 
+                     allActuallyAssignedHaveVoted = false; 
                 }
 
 
@@ -1494,12 +1582,11 @@
                     usersNotVotedList.innerHTML = '<li class="list-group-item text-success">Tất cả người dùng được chỉ định đã biểu quyết!</li>';
                  } else if (assignedUsernames.length === 0 && !vote.assignees.includes('all')) {
                      usersNotVotedList.innerHTML = '<li class="list-group-item text-warning">Không có người dùng nào được chỉ định cụ thể cho phiếu này.</li>';
-                     allActuallyAssignedHaveVoted = false; // Cannot end if no specific assignees and not 'all'
-                 } else if (assignedUsernames.length === 0 && vote.assignees.includes('all')) {
-                     // If 'all' is assigned and no one voted yet, it means no one has voted.
-                     // We need to check if all Users have voted if 'all' is present
+                     allActuallyAssignedHaveVoted = false; 
+                 } else if (assignedUsernames.length === 0 && vote.assignees.includes('all')) { 
                      const allUsernames = appData.users.filter(u => u.role === 'User').map(u => u.username);
                      let all_users_voted_flag = true;
+                     usersNotVotedList.innerHTML = ''; 
                      allUsernames.forEach(un => {
                          if (!vote.results.some(r => r.userId === un)) {
                              all_users_voted_flag = false;
@@ -1510,7 +1597,7 @@
                          }
                      });
                      if(all_users_voted_flag && allUsernames.length > 0) {
-                        usersNotVotedList.innerHTML = '<li class="list-group-item text-success">Tất cả người dùng ("User") đã biểu quyết!</li>';
+                        if(usersNotVotedList.children.length === 0) usersNotVotedList.innerHTML = '<li class="list-group-item text-success">Tất cả người dùng ("User") đã biểu quyết!</li>';
                         allActuallyAssignedHaveVoted = true;
                      } else if (allUsernames.length === 0){
                         usersNotVotedList.innerHTML = '<li class="list-group-item text-warning">Không có người dùng ("User") nào trong hệ thống để biểu quyết (được chỉ định "all").</li>';
@@ -1524,7 +1611,7 @@
                 const executeButton = document.getElementById('executeEndVoteButton');
                 const statusMessageEl = document.getElementById('endVoteStatusMessage');
 
-                if (allActuallyAssignedHaveVoted) {
+                if (allActuallyAssignedHaveVoted && (assignedUsernames.length > 0 || (vote.assignees.includes('all') && appData.users.filter(u => u.role === 'User').length > 0) ) ) { 
                     executeButton.disabled = false;
                     executeButton.dataset.voteId = voteId;
                     statusMessageEl.textContent = "Tất cả thành viên đã biểu quyết. Bạn có thể kết thúc phiếu này.";
@@ -1589,11 +1676,23 @@
                  console.log("[AdminDebug] Populated admin user list. Users count:", appData.users.length);
             }
             window.deleteUser = function(userId) { 
-                if (confirm("Bạn có chắc muốn xóa người dùng này? Hành động này không thể hoàn tác.")) {
+                const userToDelete = appData.users.find(u => u.id === userId);
+                if (confirm(`Bạn có chắc muốn xóa người dùng "${userToDelete ? userToDelete.username : ''}"? Hành động này không thể hoàn tác.`)) {
+                    const oldUsername = userToDelete ? userToDelete.username : null;
                     appData.users = appData.users.filter(u => u.id !== userId);
+                    
+                    if (oldUsername) {
+                        appData.votes.forEach(vote => {
+                            vote.assignees = vote.assignees.filter(assignee => assignee !== oldUsername);
+                            vote.results = vote.results.filter(result => result.userId !== oldUsername);
+                        });
+                    }
+
                     populateAdminUserList();
                     populatePermissionsTable();
                     populateUserCheckboxes(); 
+                    populateVoteList(); 
+                    populateEndVoteListTable();
                     showCustomAlert("Đã xóa người dùng.");
                 }
             };
@@ -1702,7 +1801,7 @@
                                                 <td>${doc.uploader}</td>
                                                 <td>${(doc.size / 1024).toFixed(1)} KB</td>
                                                 <td>
-                                                    <a href="#" class="btn btn-info btn-sm" onclick="event.preventDefault(); mockDownload('${doc.name.replace(/'/g, "\\'")}')"><i class="fas fa-download"></i></a> 
+                                                     <a href="#" class="btn btn-info btn-sm" onclick="event.preventDefault(); handleAttachmentClick('document', ${doc.id}, '${doc.name.replace(/'/g, "\\'")}')"><i class="fas fa-download"></i></a> 
                                                     ${appData.currentUser && appData.currentUser.role === 'Admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteDocument(${doc.id})"><i class="fas fa-trash"></i></button>` : ''}
                                                 </td>
                                             </tr>
@@ -1791,7 +1890,61 @@
                 });
             }
 
+            let pdfDisplayModalInstance = null;
+            function showPdfContentModal(title, content) {
+                if (!pdfDisplayModalInstance) {
+                    pdfDisplayModalInstance = new bootstrap.Modal(document.getElementById('pdfDisplayModal'));
+                }
+                document.getElementById('pdfDisplayModalLabel').textContent = title;
+                document.getElementById('pdfDisplayModalBody').innerHTML = content; 
+                pdfDisplayModalInstance.show();
+            }
 
+            window.handleAttachmentClick = function(context, itemId, attachmentDisplayName) {
+                let item;
+                let attachment;
+
+                if (context === 'vote') {
+                    item = appData.votes.find(v => v.id === itemId);
+                    if (item) attachment = item.attachments.find(att => att.name === attachmentDisplayName);
+                } else if (context === 'document') { 
+                    attachment = appData.documents.find(doc => doc.id === itemId && doc.name === attachmentDisplayName);
+                } else if (context === 'generated') { 
+                    const content = `Đây là nội dung mô phỏng cho file: ${attachmentDisplayName}\nNgày tạo: ${new Date().toLocaleDateString('vi-VN')}`;
+                    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+                    try {
+                        saveAs(blob, attachmentDisplayName); 
+                    } catch(e) {
+                        console.error("FileSaver.js is not loaded or error during save:", e);
+                        showCustomAlert(`Lỗi khi tải file (mô phỏng): ${attachmentDisplayName}`);
+                    }
+                    return; 
+                }
+
+
+                if (!attachment) {
+                    console.error("Attachment not found:", attachmentDisplayName, "in context:", context, "itemId:", itemId);
+                    showCustomAlert("Không tìm thấy tài liệu đính kèm.");
+                    return;
+                }
+
+                if (attachment.isUploadedPdf && attachment.uploadedFileContent) {
+                    const formattedPdfText = attachment.uploadedFileContent
+                        .replace(/\n/g, '<br>')
+                        .replace(/--- PAGE (\d+) ---/g, '<hr><strong>Trang $1</strong><br>');
+                    showPdfContentModal("Nội dung: " + (attachment.originalUploadedName || attachment.name), formattedPdfText);
+                } else {
+                    const content = `Đây là nội dung mô phỏng cho file: ${attachment.name}\nNgày tạo: ${new Date().toLocaleDateString('vi-VN')}`;
+                    const blob = new Blob([content], { type: attachment.type || "text/plain;charset=utf-8" });
+                    try {
+                        saveAs(blob, attachment.name); 
+                    } catch(e) {
+                        console.error("FileSaver.js is not loaded or error during save:", e);
+                        showCustomAlert(`Lỗi khi tải file (mô phỏng): ${attachment.name}`);
+                    }
+                }
+            }
+            
             // Initial setup calls on page load
             populateAllDynamicContent();
             applyPermissionsToUI(); 
@@ -1852,11 +2005,11 @@
             }
             
             const summarizeButtonContainer = document.getElementById('otherOpinionsSummaryContainer');
-            const summarizeButton = document.getElementById('summarizeOtherOpinionsButton'); //This is for history modal, not related to create vote
+            const summarizeButton = document.getElementById('summarizeOtherOpinionsButton'); 
             const geminiSummaryDiv = document.getElementById('geminiOtherOpinionsSummary');
             const otherOpinionsSpinner = document.getElementById('otherOpinionsLoadingSpinner');
 
-            if (appData.currentUser && appData.currentUser.role === 'Admin' && otherOpinionsForSummary.length > 0 && summarizeButton) { // Check if summarizeButton exists
+            if (appData.currentUser && appData.currentUser.role === 'Admin' && otherOpinionsForSummary.length > 0 && summarizeButton) { 
                 summarizeButtonContainer.style.display = 'block';
                 geminiSummaryDiv.style.display = 'none'; 
                 geminiSummaryDiv.innerHTML = '';
@@ -1891,7 +2044,7 @@
             if (vote.attachments && vote.attachments.length > 0) {
                  vote.attachments.forEach(file => {
                     const li = document.createElement('li');
-                    li.innerHTML = `<a href="#" onclick="event.preventDefault(); mockDownload('${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${(file.size / 1024).toFixed(1)} KB)`;
+                    li.innerHTML = `<a href="#" onclick="event.preventDefault(); handleAttachmentClick('vote', ${vote.id}, '${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${(file.size / 1024).toFixed(1)} KB)`;
                     historyAttachmentsUl.appendChild(li);
                 });
             }
@@ -1902,12 +2055,12 @@
             ];
             if (vote.results && vote.results.length > 0) {
                 vote.results.forEach(result => {
-                     generatedFiles.push({ name: `PhieuBieuQuyet_${result.userId}_${safeVoteTitle}.pdf`, type: `Phiếu BQ của ${result.userId}` });
+                     generatedFiles.push({ name: `PhieuBieuQuyet_${result.userId.replace(/\s+/g, '_')}_${safeVoteTitle}.pdf`, type: `Phiếu BQ của ${result.userId}` });
                 });
             }
             generatedFiles.forEach(file => {
                 const li = document.createElement('li');
-                li.innerHTML = `<a href="#" onclick="event.preventDefault(); mockDownload('${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${file.type})`;
+                li.innerHTML = `<a href="#" onclick="event.preventDefault(); handleAttachmentClick('generated', null, '${file.name.replace(/'/g, "\\'")}')">${file.name} <i class="fas fa-download"></i></a> (${file.type})`;
                 historyAttachmentsUl.appendChild(li);
             });
             if (historyAttachmentsUl.children.length === 0) {
@@ -1954,17 +2107,6 @@
                 }
             });
             modal.show();
-        }
-
-        function mockDownload(filename) {
-            const content = `Đây là nội dung mô phỏng cho file: ${filename}\nNgày tạo: ${new Date().toLocaleDateString('vi-VN')}`;
-            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-            try {
-                 FileSaver.saveAs(blob, filename);
-            } catch(e) {
-                console.error("FileSaver.js is not loaded or error during save:", e);
-                 showCustomAlert(`Lỗi khi tải file (mô phỏng): ${filename}`);
-            }
         }
     </script>
 </body>
